@@ -1,6 +1,7 @@
 package com.weathert.fragment;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -15,7 +16,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.weathert.MainActivity;
 import com.weathert.R;
+import com.weathert.WeatherActivity;
 import com.weathert.db.City;
 import com.weathert.db.County;
 import com.weathert.db.Province;
@@ -39,7 +42,7 @@ import okhttp3.Response;
 
 public class ChooseAreaFragment extends Fragment {
 
-    private static final String TAG="ChooseAreaFragment";
+    private static final String TAG = "ChooseAreaFragment";
 
     public static final int LEVEL_PROVINCE = 0;
     public static final int LEVEL_CITY = 1;
@@ -111,11 +114,27 @@ public class ChooseAreaFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (currentLevel == LEVEL_PROVINCE) {
                     selectedProvince = provinceList.get(position);
-                    Log.d(TAG, "onItemClick: "+selectedProvince.getProvinceName());
                     queryCities();
                 } else if (currentLevel == LEVEL_CITY) {
                     selectedCity = cityList.get(position);
                     queryCounties();
+                } else if (currentLevel == LEVEL_COUNTY) {
+
+                    String weatherId = countyList.get(position).getWeatherId();
+
+                    if (getActivity() instanceof MainActivity) {
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id", weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    } else {
+                        WeatherActivity activity = (WeatherActivity) getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.swipeRefresh.setRefreshing(true);
+                        activity.requestWeather(weatherId);
+                    }
+
+
                 }
             }
         });
@@ -159,7 +178,7 @@ public class ChooseAreaFragment extends Fragment {
     /*
     * 根据传入的地址和类型从服务器上查询省市县数据
     * */
-    private void queryFormServer(String address,final String type) {
+    private void queryFormServer(String address, final String type) {
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
